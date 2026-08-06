@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ksons Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #C9922A; --gold-light: #E8B84B;
+    --deep-green: #1E3A1E; --mid-green: #2F5230;
+    --cream: #FAF6EE; --charcoal: #2C2C2C;
+    --text-muted: #6B6455; --border: rgba(201,146,42,0.2);
+    --red: #e74c3c; --blue: #2980b9; --green: #27ae60; --orange: #f39c12;
+  }
+  body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: var(--charcoal); min-height: 100vh; }
+
+  /* LOGIN */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--deep-green), var(--mid-green)); }
+  .login-box { background: #fff; border-radius: 12px; padding: 44px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .login-logo { text-align: center; margin-bottom: 28px; }
+  .login-logo h1 { font-family: 'Playfair Display', serif; color: var(--deep-green); font-size: 1.6rem; }
+  .login-logo p { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+  .login-box input { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 12px 14px; font-size: 0.95rem; margin-bottom: 12px; outline: none; font-family: 'Inter', sans-serif; transition: border-color 0.2s; }
+  .login-box input:focus { border-color: var(--gold); }
+  .login-btn { width: 100%; background: var(--deep-green); color: #fff; border: none; padding: 13px; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 4px; }
+  .login-btn:hover { background: var(--mid-green); }
+  .login-err { color: var(--red); font-size: 0.85rem; text-align: center; margin-top: 10px; display: none; }
+
+  /* DASHBOARD */
+  .dashboard { display: none; }
+  .topbar {
+    background: var(--deep-green); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 64px; position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-brand { font-family: 'Playfair Display', serif; font-size: 1.2rem; }
+  .topbar-brand span { font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-left: 8px; }
+  .logout-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+  .logout-btn:hover { background: rgba(255,255,255,0.2); }
+
+  .main { padding: 28px; max-width: 1200px; margin: 0 auto; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; margin-bottom: 32px; }
+  .stat-card { background: #fff; border-radius: 10px; padding: 22px; border-left: 4px solid var(--gold); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .stat-card.green { border-left-color: var(--green); }
+  .stat-card.blue  { border-left-color: var(--blue); }
+  .stat-card.red   { border-left-color: var(--red); }
+  .stat-card.orange{ border-left-color: var(--orange); }
+  .stat-num { font-size: 2rem; font-weight: 700; color: var(--charcoal); }
+  .stat-lbl { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: #fff; border-radius: 8px; padding: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); width: fit-content; }
+  .tab-btn { padding: 9px 20px; border-radius: 6px; border: none; background: none; font-size: 0.88rem; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+  .tab-btn.active { background: var(--deep-green); color: #fff; }
+
+  /* TABLE */
+  .table-wrap { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+  .table-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid #f0f0f0; }
+  .table-head h3 { font-size: 1rem; font-weight: 600; color: var(--deep-green); }
+  .refresh-btn { background: var(--cream); border: 1px solid var(--border); color: var(--deep-green); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 500; }
+  .refresh-btn:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f8f9fa; padding: 12px 16px; text-align: left; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 14px 16px; font-size: 0.88rem; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbfc; }
+
+  .badge {
+    display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+  }
+  .badge-pending  { background: #fff3cd; color: #856404; }
+  .badge-confirmed{ background: #d1ecf1; color: #0c5460; }
+  .badge-delivered{ background: #d4edda; color: #155724; }
+  .badge-cancelled{ background: #f8d7da; color: #721c24; }
+  .badge-new      { background: #cce5ff; color: #004085; }
+
+  .status-select { border: 1px solid #ddd; border-radius: 4px; padding: 5px 8px; font-size: 0.82rem; cursor: pointer; outline: none; }
+  .status-select:focus { border-color: var(--gold); }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-state span { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.9rem; }
+
+  @media(max-width: 768px) {
+    .main { padding: 16px; }
+    table { font-size: 0.8rem; }
+    th, td { padding: 10px 10px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>🌿 Ksons Admin</h1>
+      <p>Orders & Enquiries Management</p>
+    </div>
+    <input type="text" id="adminUser" placeholder="Username" value=""/>
+    <input type="password" id="adminPass" placeholder="Password" value=""/>
+    <button class="login-btn" onclick="doLogin()">Login →</button>
+    <p class="login-err" id="loginErr">❌ Username or password is incorrect!</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="topbar">
+    <div class="topbar-brand">🌿 Ksons Admin Panel <span>Orders & Enquiries</span></div>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
+
+  <div class="main">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card orange"><div class="stat-num" id="statTotal">—</div><div class="stat-lbl">Total Orders</div></div>
+      <div class="stat-card"><div class="stat-num" id="statPending">—</div><div class="stat-lbl">Pending Orders</div></div>
+      <div class="stat-card green"><div class="stat-num" id="statDelivered">—</div><div class="stat-lbl">Delivered</div></div>
+      <div class="stat-card blue"><div class="stat-num" id="statEnquiries">—</div><div class="stat-lbl">Enquiries</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('orders', this)">📦 Orders</button>
+      <button class="tab-btn" onclick="switchTab('enquiries', this)">📩 Enquiries</button>
+    </div>
+
+    <!-- Orders Table -->
+    <div id="ordersTab" class="table-wrap">
+      <div class="table-head">
+        <h3>📦 All Orders</h3>
+        <button class="refresh-btn" onclick="loadOrders()">🔄 Refresh</button>
+      </div>
+      <div id="ordersBody"><div class="loading">⏳ Loading orders...</div></div>
+    </div>
+
+    <!-- Enquiries Table -->
+    <div id="enquiriesTab" class="table-wrap" style="display:none">
+      <div class="table-head">
+        <h3>📩 All Enquiries</h3>
+        <button class="refresh-btn" onclick="loadEnquiries()">🔄 Refresh</button>
+      </div>
+      <div id="enquiriesBody"><div class="loading">⏳ Loading enquiries...</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzX-5NP6U3zf76V6CwmvTBIbU0N3l5gjg",
+    authDomain: "ksons-mustard-oil.firebaseapp.com",
+    projectId: "ksons-mustard-oil",
+    storageBucket: "ksons-mustard-oil.firebasestorage.app",
+    messagingSenderId: "672461181071",
+    appId: "1:672461181071:web:a7c93566deb4fdc2f220fa",
+    measurementId: "G-GMQWQ1B2FE"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // ── LOGIN ──
+  const ADMIN_USER = "ksons";
+  const ADMIN_PASS = "ksons2024";
+
+  window.doLogin = function() {
+    const u = document.getElementById('adminUser').value.trim();
+    const p = document.getElementById('adminPass').value.trim();
+    if (u === ADMIN_USER && p === ADMIN_PASS) {
+      document.getElementById('loginWrap').style.display  = 'none';
+      document.getElementById('dashboard').style.display  = 'block';
+      loadOrders();
+      loadEnquiries();
+    } else {
+      document.getElementById('loginErr').style.display = 'block';
+    }
+  };
+
+  window.doLogout = function() {
+    document.getElementById('loginWrap').style.display  = 'flex';
+    document.getElementById('dashboard').style.display  = 'none';
+    document.getElementById('adminUser').value = '';
+    document.getElementById('adminPass').value = '';
+  };
+
+  // Allow Enter key on login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('loginWrap').style.display !== 'none') window.doLogin();
+  });
+
+  // ── TABS ──
+  window.switchTab = function(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('ordersTab').style.display     = tab === 'orders'    ? 'block' : 'none';
+    document.getElementById('enquiriesTab').style.display  = tab === 'enquiries' ? 'block' : 'none';
+  };
+
+  // ── STATUS BADGE ──
+  function badge(status) {
+    const map = { Pending:'badge-pending', Confirmed:'badge-confirmed', Delivered:'badge-delivered', Cancelled:'badge-cancelled', New:'badge-new' };
+    return `<span class="badge ${map[status]||'badge-pending'}">${status||'Pending'}</span>`;
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'numeric' }) + ' ' +
+           d.toLocaleTimeString('en-PK', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ── LOAD ORDERS ──
+  window.loadOrders = async function() {
+    const body = document.getElementById('ordersBody');
+    body.innerHTML = '<div class="loading">⏳ Loading...</div>';
+    try {
+      const q = query(collection(db, 'orders'), orderBy('timestamp', 'desc'));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        body.innerHTML = '<div class="empty-state"><span>📦</span>Abhi koi order nahi hai.</div>';
+        document.getElementById('statTotal').textContent = 0;
+        document.getElementById('statPending').textContent = 0;
+        document.getElementById('statDelivered').textContent = 0;
+        return;
+      }
+      let pending = 0, delivered = 0;
+      let rows = '';
+      snap.forEach(d => {
+        const o = d.data();
+        if (o.status === 'Pending' || !o.status) pending++;
+        if (o.status === 'Delivered') delivered++;
+        rows += `<tr>
+          <td><strong>${o.name||'—'}</strong></td>
+          <td><a href="https://wa.me/${o.phone}" target="_blank" style="color:var(--green)">📞 ${o.phone||'—'}</a></td>
+          <td>${o.product||'—'}</td>
+          <td>${o.size||'—'}</td>
+          <td>${o.city||'—'}</td>
+          <td>${badge(o.status||'Pending')}</td>
+          <td>
+            <select class="status-select" onchange="updateStatus('orders','${d.id}',this.value)">
+              <option ${(o.status||'Pending')==='Pending'?'selected':''}>Pending</option>
+              <option ${o.status==='Confirmed'?'selected':''}>Confirmed</option>
+              <option ${o.status==='Delivered'?'selected':''}>Delivered</option>
+              <option ${o.status==='Cancelled'?'selected':''}>Cancelled</option>
+            </select>
+          </td>
+          <td style="font-size:0.78rem;color:var(--text-muted)">${fmtDate(o.timestamp)}</td>
+        </tr>`;
+      });
+      document.getElementById('statTotal').textContent     = snap.size;
+      document.getElementById('statPending').textContent   = pending;
+      document.getElementById('statDelivered').textContent = delivered;
+      body.innerHTML = `<table>
+        <thead><tr><th>Name</th><th>Phone</th><th>Product</th><th>Size</th><th>City</th><th>Status</th><th>Update</th><th>Date</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    } catch (e) {
+      body.innerHTML = '<div class="empty-state"><span>❌</span>Error loading orders. Console check karein.</div>';
+      console.error(e);
+    }
+  };
+
+  // ── LOAD ENQUIRIES ──
+  window.loadEnquiries = async function() {
+    const body = document.getElementById('enquiriesBody');
+    body.innerHTML = '<div class="loading">⏳ Loading...</div>';
+    try {
+      const q = query(collection(db, 'enquiries'), orderBy('timestamp', 'desc'));
+      const snap = await getDocs(q);
+      document.getElementById('statEnquiries').textContent = snap.size;
+      if (snap.empty) {
+        body.innerHTML = '<div class="empty-state"><span>📩</span>Abhi koi enquiry nahi hai.</div>';
+        return;
+      }
+      let rows = '';
+      snap.forEach(d => {
+        const o = d.data();
+        rows += `<tr>
+          <td><strong>${o.name||'—'}</strong></td>
+          <td><a href="https://wa.me/${o.phone}" target="_blank" style="color:var(--green)">📞 ${o.phone||'—'}</a></td>
+          <td>${o.email||'—'}</td>
+          <td>${o.product||'—'}</td>
+          <td style="max-width:200px;word-break:break-word">${o.message||'—'}</td>
+          <td>${badge(o.status||'New')}</td>
+          <td>
+            <select class="status-select" onchange="updateStatus('enquiries','${d.id}',this.value)">
+              <option ${(o.status||'New')==='New'?'selected':''}>New</option>
+              <option ${o.status==='Replied'?'selected':''}>Replied</option>
+              <option ${o.status==='Closed'?'selected':''}>Closed</option>
+            </select>
+          </td>
+          <td style="font-size:0.78rem;color:var(--text-muted)">${fmtDate(o.timestamp)}</td>
+        </tr>`;
+      });
+      body.innerHTML = `<table>
+        <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Product</th><th>Message</th><th>Status</th><th>Update</th><th>Date</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    } catch (e) {
+      body.innerHTML = '<div class="empty-state"><span>❌</span>Error loading enquiries.</div>';
+      console.error(e);
+    }
+  };
+
+  // ── UPDATE STATUS ──
+  window.updateStatus = async function(col, id, status) {
+    try {
+      await updateDoc(doc(db, col, id), { status });
+      // Reload stats
+      if (col === 'orders') loadOrders();
+    } catch (e) {
+      alert('❌ Status update nahi hua. Dobara try karein.');
+      console.error(e);
+    }
+  };
+</script>
+</body>
+</html>
